@@ -56,6 +56,7 @@
     <spotless-maven-plugin.version>2.11.1</spotless-maven-plugin.version>
     <surefire.version>3.0.0-M5</surefire.version>
   	<sonar.projectKey>ShockGiammy_avro</sonar.projectKey>
+  	<sonar.moduleKey>${artifactId}</sonar.moduleKey>
   	<sonar.organization>shockgiammy</sonar.organization>
   	<sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
