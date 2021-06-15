@@ -35,6 +35,7 @@
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <maven.archetype.version>3.2.0</maven.archetype.version>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <modules>
@@ -103,6 +104,10 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

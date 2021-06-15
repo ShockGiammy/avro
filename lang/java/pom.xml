@@ -65,6 +65,11 @@
     <exec-plugin.version>3.0.0</exec-plugin.version>
     <file-management.version>3.0.0</file-management.version>
     <javacc-plugin.version>2.6</javacc-plugin.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <aggregate.report.dir>coverage-avro/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
   </properties>
 
   <modules>
@@ -83,6 +88,7 @@
     <module>grpc</module>
     <module>integration-test</module>
     <module>perf</module>
+    <module>coverage-avro</module>
   </modules>
 
   <build>
@@ -153,37 +159,6 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <includes>
-              <!-- Avro naming convention for JUnit tests -->
-              <include>**/Test**</include>
-            </includes>
-            <excludes>
-              <!-- A few innner classes are not to be tested -->
-              <exclude>**/*$*</exclude>
-              <!-- exclude the generated classes under apache.avro.test, some of
-                these match **/Test** and are not JUnit tests -->
-              <exclude>**/apache/avro/test/**</exclude>
-            </excludes>
-            <enableAssertions>false</enableAssertions>
-            <trimStackTrace>false</trimStackTrace>
-            <runOrder>random</runOrder>
-            <parallel>all</parallel>
-            <useUnlimitedThreads>true</useUnlimitedThreads>
-            <!--<perCoreThreadCount>true</perCoreThreadCount>-->
-
-            <!-- TestSpecificCompiler instantiates a Java compiler to test output results,
-                 this does not work with a manifest-only-jar to set the classpath for the javac.
-                 This may cause problems on some platforms.
-                 See https://maven.apache.org/plugins/maven-surefire-plugin/examples/class-loading.html
-                 for more information. -->
-            <useManifestOnlyJar>false</useManifestOnlyJar>
-            <!-- configures unit test standard error and standard out to go to a file per test
-                 rather than the console. -->
-            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-            <failIfNoTests>false</failIfNoTests>
-            <argLine>-Xmx1000m</argLine>
-          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -279,36 +254,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-        <configuration>
-          <java>
-            <eclipse>
-              <!-- Avro uses Sun's java code style conventions with 2 spaces, this is a modified version of
-                   the eclipse formatter -->
-              <file>${main.basedir}/lang/java/eclipse-java-formatter.xml</file>
-              <version>4.19.0</version>
-            </eclipse>
-            <removeUnusedImports/>
-            <replaceRegex>
-              <name>Remove wildcard imports</name>
-              <searchRegex>import\s+[^\*\s]+\*;(\r\n|\r|\n)</searchRegex>
-              <replacement>$1</replacement>
-            </replaceRegex>
-          </java>
-        </configuration>
-        <executions>
-          <execution>
-            <!-- Runs in compile phase to fail fast in case of formatting issues.-->
-            <id>spotless-check</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 
@@ -316,149 +261,38 @@
   </reporting>
 
   <profiles>
-    <profile>
-      <id>m2e</id>
-      <activation>
-        <property><name>m2e.version</name></property>
-      </activation>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.eclipse.m2e</groupId>
-              <artifactId>lifecycle-mapping</artifactId>
-              <version>1.0.0</version>
-              <configuration>
-                <lifecycleMappingMetadata>
-                  <pluginExecutions>
-                    <pluginExecution>
-                      <pluginExecutionFilter>
-                        <groupId>com.diffplug.spotless</groupId>
-                        <artifactId>spotless-maven-plugin</artifactId>
-                        <goals>
-                          <goal>check</goal>
-                        </goals>
-                      </pluginExecutionFilter>
-                      <action>
-                        <ignore></ignore>
-                      </action>
-                    </pluginExecution>
-                    <pluginExecution>
-                      <pluginExecutionFilter>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-plugin-plugin</artifactId>
-                        <goals>
-                          <goal>helpmojo</goal>
-                          <goal>descriptor</goal>
-                        </goals>
-                      </pluginExecutionFilter>
-                      <action>
-                        <ignore />
-                      </action>
-                    </pluginExecution>
-                    <pluginExecution>
-                      <pluginExecutionFilter>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <versionRange>[$${exec-plugin.version},)</versionRange>
-                        <goals>
-                          <goal>exec</goal>
-                        </goals>
-                      </pluginExecutionFilter>
-                      <action>
-                        <ignore />
-                      </action>
-                    </pluginExecution>
-                    <pluginExecution>
-                      <pluginExecutionFilter>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>javacc-maven-plugin</artifactId>
-                        <versionRange>[${javacc-plugin.version},)</versionRange>
-                        <goals>
-                          <goal>javacc</goal>
-                        </goals>
-                      </pluginExecutionFilter>
-                      <action>
-                        <ignore />
-                      </action>
-                    </pluginExecution>
-                    <pluginExecution>
-                      <pluginExecutionFilter>
-                        <groupId>org.apache.avro</groupId>
-                        <artifactId>avro-maven-plugin</artifactId>
-                        <versionRange>[${project.version},)</versionRange>
-                        <goals>
-                          <goal>protocol</goal>
-                          <goal>idl-protocol</goal>
-                          <goal>schema</goal>
-                        </goals>
-                      </pluginExecutionFilter>
-                      <action>
-                        <ignore />
-                      </action>
-                    </pluginExecution>
-                  </pluginExecutions>
-                </lifecycleMappingMetadata>
-              </configuration>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
-    </profile>
-    <profile>
-      <id>interop-data-test</id>
+      <profile>
+      <id>coverage</id>
+      	<activation>
+      	<property>
+        <name>coverage</name>
+        <value>true</value>
+      </property>
+ 		</activation>
+	  <properties>
+   	 	<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    	<sonar.organization>shockgiammy</sonar.organization>
+  	  </properties>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <includes>
-                <include>**/DataFileInteropTest*</include>
-              </includes>
-              <excludes>
-              </excludes>
-              <enableAssertions>false</enableAssertions>
-              <forkCount>1</forkCount>
-              <reuseForks>true</reuseForks>
-              <redirectTestOutputToFile>false</redirectTestOutputToFile>
-              <systemPropertyVariables>
-                <test.dir>../../../build/interop/data/</test.dir>
-              </systemPropertyVariables>
-            </configuration>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
+		  <plugin>
+        	<groupId>org.sonarsource.scanner.maven</groupId>
+        	<artifactId>sonar-maven-plugin</artifactId>
+      	  </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>mac</id>
-      <activation>
-        <os>
-        <family>mac</family>
-        </os>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <systemPropertyVariables>
-                <!-- avro-mapred will fail in tests on mac without this -->
-                <java.security.krb5.realm>OX.AC.UK</java.security.krb5.realm>
-                <java.security.krb5.kdc>kdc0.ox.ac.uk:kdc1.ox.ac.uk</java.security.krb5.kdc>
-              </systemPropertyVariables>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <!-- This profile is used on tests to validate backwards compatibility with Hadoop 2 -->
-    <profile>
-      <id>hadoop2</id>
-      <properties>
-        <hadoop.version>2.10.1</hadoop.version>
-      </properties>
     </profile>
   </profiles>
 

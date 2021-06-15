@@ -43,6 +43,7 @@
       *
     </osgi.import>
     <osgi.export>org.apache.avro.compiler*;version="${project.version}"</osgi.export>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <build>
@@ -93,15 +94,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- some tests hang if not run in a separate JVM -->
-          <forkCount>1</forkCount>
-          <reuseForks>false</reuseForks>
-          <parallel>none</parallel>
-          <systemPropertyVariables>
-            <test.idl.dir>${project.basedir}/src/test/idl</test.idl.dir>
-          </systemPropertyVariables>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
