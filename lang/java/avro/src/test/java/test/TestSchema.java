@@ -18,9 +18,23 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
+import org.junit.Before;
 import org.junit.Test;
 
 public class TestSchema {
+	
+	Schema schema;
+	String schemaName;
+	String docSchema;
+	String namespace;
+	
+	@Before
+	public void configure() {
+		schemaName = "sName";
+		docSchema = "doc";
+		namespace = "foo";
+	}
+	
   @Test
   public void testSplitSchemaBuild() {
     Schema s = SchemaBuilder.record("HandshakeRequest").namespace("org.apache.avro.ipc").fields().name("clientProtocol")
@@ -82,6 +96,11 @@ public class TestSchema {
     Schema schema = createDefaultRecord();
     String schemaString = schema.toString();
     assertNotNull(schemaString);
+  }
+  
+  @Test
+  public void illegalCharacter() {
+	  //(Schema.createRecord("other name", docSchema, namespace, false));
   }
 
   @Test
