@@ -20,7 +20,7 @@ public class TestProtocol {
 	Protocol p1;
 	String propName;
 	String propValue;
-	String message;
+	String msgName;
 	Schema schema;
 	String schemaName;
 	String docSchema;
@@ -30,7 +30,7 @@ public class TestProtocol {
 	String baseMsg;
 	String NoMsg;
 	String WrongMsg;
-	String RightOneWayMsg;
+	String rightOneWayMsg;
 	String WrongOneWayMsg;
 	String RightTwoWayMsg;
 	String noBoolOneWayMsg;
@@ -43,7 +43,7 @@ public class TestProtocol {
 		namespace = "foo";
 		propName = "fooProperty";
 		propValue = "fooValue";
-		message = "fooMessage";
+		msgName = "fooMessage";
 		schemaName = "sName";
 		docSchema = "doc";
 		p1 = new Protocol(pName, doc, namespace);
@@ -52,13 +52,13 @@ public class TestProtocol {
 		jsonFormat = "{\"protocol\":\"" + pName + "\",\"namespace\":\"" + namespace + "\",\"" + propName + "\":\"" +
 				propValue + "\",\"types\":[],";
 		NoMsg = "\"messages\":{}}";
-		WrongMsg = "\"messages\":{\"" + message + "\": \"" + message + "\"}}";
+		WrongMsg = "\"messages\":{\"" + msgName + "\": \"" + msgName + "\"}}";
 		baseMsg = "\"types\": [ {\"name\": \"Greeting\", \"type\": \"record\", \"fields\": [ {\"name\": \"message\", \"type\": \"string\"}]}],"
-				+ "\"messages\":{\"" + message + "\":{\"request\": [{\"name\": \"greeting\", \"type\": \"Greeting\" }]";
+				+ "\"messages\":{\"" + msgName + "\":{\"request\": [{\"name\": \"greeting\", \"type\": \"Greeting\" }]";
 		WrongOneWayMsg = baseMsg + "} } }";
 		RightTwoWayMsg = baseMsg + ", \"response\": \"Greeting\" } } }";
 		noBoolOneWayMsg = baseMsg + ", \"one-way\" : \"true\"} } }";
-		RightOneWayMsg = baseMsg + ", \"one-way\" : true} } }";
+		rightOneWayMsg = baseMsg + ", \"one-way\" : true} } }";
 		
 		colSchema = new ArrayList<>();
 		colSchema.add(schema);
@@ -90,9 +90,12 @@ public class TestProtocol {
 		Protocol p5 = new Protocol("other Name", null, namespace);			//to reach branch coverage
 		Protocol p6 = new Protocol(pName, null, "other namespace");
 		Protocol p7 = new Protocol(pName, "other doc", namespace);
+		
+		Protocol p8 = Protocol.parse(jsonFormat + rightOneWayMsg);
 		assertFalse(p1.equals(p5));
 		assertFalse(p1.equals(p6));
 		assertFalse(p1.equals(p7));
+		assertFalse(p1.equals(p8));
 	}
 	
 	@Test
@@ -113,50 +116,80 @@ public class TestProtocol {
 		assertEquals(doc, p1.getDoc());
 		assertEquals(propValue, p1.getProp(propName));
 		assertEquals(jsonFormat + NoMsg, Protocol.parse(toUse).toString());
+		
+		toUse = p1.toString(true);
+		assertEquals(jsonFormat + NoMsg, Protocol.parse(toUse).toString());
 
 		assertNotNull(p1.getMD5());
 		assertNotNull(p1.getMD5());				//branch coverage
+		assertNotNull(p1.hashCode());
 	}
 	
 	@Test(expected = SchemaParseException.class)
 	public void testSchemaParseException1() {
-		toUse = Protocol.parse(jsonFormat + WrongMsg).toString();
+		Protocol.parse(jsonFormat + WrongMsg).toString();
 	}
 	
 	@Test(expected = SchemaParseException.class)
 	public void testSchemaParseException2() {
-		toUse = Protocol.parse(jsonFormat + WrongOneWayMsg).toString();
+		Protocol.parse(jsonFormat + WrongOneWayMsg).toString();
 	}
 	
 	@Test(expected = SchemaParseException.class)
 	public void testSchemaParseException3() {
-		toUse = Protocol.parse(jsonFormat + noBoolOneWayMsg).toString();
+		Protocol.parse(jsonFormat + noBoolOneWayMsg).toString();
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException4() {
+		Protocol.parse(rightOneWayMsg);
 	}
 	
 	@Test
 	public void testParseProtocol() {
-		toUse = Protocol.parse(jsonFormat + RightTwoWayMsg).toString();
+
 		assertNotNull(Protocol.parse(jsonFormat + RightTwoWayMsg).getMessages());
-		toUse = Protocol.parse(jsonFormat + RightOneWayMsg).toString();
+		assertNotNull(Protocol.parse(jsonFormat + rightOneWayMsg).getMessages());
+	}
+	
+	@Test
+	public void testOneWayMessage() {
+		
+		assertEquals("{}", p1.getMessages().toString());
+		
+		msg = p1.createMessage(msgName, doc, schema);
+		assertEquals(schema, msg.getRequest());
+		assertEquals(doc, msg.getDoc());
+		assertEquals(msgName, msg.getName());
+		assertEquals("[]",msg.getErrors().toString());
+		assertEquals("\"null\"", msg.getResponse().toString());
+		assertTrue(msg.isOneWay());
+	}
+	
+	@Test
+	public void testTwoWayMessage() {
+		msg = p1.createMessage(msgName, doc, schema, schema, schema);
+		assertFalse(msg.isOneWay());
+		Message msg2 = p1.createMessage(msg, schema, schema, schema);
+		assertFalse(msg2.isOneWay());
 	}
 	
 	@Test
 	public void testAddMessage() {
-		assertEquals("{}", p1.getMessages().toString());
-		
-		msg = p1.createMessage(message, doc, schema);
+
+		msg = p1.createMessage(msgName, doc, schema);
 		Message msg2 = p1.createMessage(msg, schema);
-		Message msg3 = p1.createMessage(message, doc, schema);
+		Message msg3 = p1.createMessage(msgName, doc, schema);
 		Message msg4 = p1.createMessage("otherName", doc, schema);
 		schema = Schema.createRecord("otherName", docSchema, namespace, false);
 		Message msg5 = p1.createMessage("otherName", doc, schema);
-		assertEquals(doc, msg.getDoc());
-		assertEquals(message, msg.getName());
+
 		assertEquals(pName, msg2.getName());
+		
 		assertNull(msg.getObjectProp(namespace));
 		assertTrue(msg.equals(msg));
 		assertTrue(msg.equals(msg));
-		assertFalse(msg.equals(message));				// to reach branch coverage
+		assertFalse(msg.equals(msgName));				// to reach branch coverage
 		assertTrue(msg.equals(msg3));
 		assertFalse(msg.equals(msg4));
 		assertFalse(msg.equals(msg5));
