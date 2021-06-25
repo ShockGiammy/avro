@@ -1,0 +1,19 @@
+{"protocol": "exampleProtocol",
+ "namespace": "example",
+ "doc": "foo",
+
+ "types": [
+     {"type": "record","name": "Message",
+      "fields": [
+          {"name": "to",   "type": "string"},
+          {"name": "from", "type": "string"},
+          {"name": "body", "type": "string"}
+      ]
+     },
+     {"type": "error","name": "Error",
+     "fields": [
+          {"name": "to",   "type": "string"}
+      ]
+     }
+ ]
+}
