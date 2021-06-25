@@ -1,8 +1,8 @@
 {
   "type" : "record",
   "name" : "TestRecordWithLogicalTypes",
-  "doc" : "Schema for TestRecordWithLogicalTypes and TestRecordWithoutLogicalTypes, see TestSpecificLogicalTypes",
   "namespace" : "org.apache.avro.specific",
+  "doc" : "SchemaExample",
   "fields" : [ {
     "name" : "b",
     "type" : "boolean"

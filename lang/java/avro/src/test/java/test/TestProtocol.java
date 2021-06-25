@@ -1,12 +1,20 @@
 package test;
 
 import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.JsonProperties;
 import org.apache.avro.Protocol;
 import org.apache.avro.Protocol.Message;
@@ -43,6 +51,7 @@ public class TestProtocol {
 	String toUse;
 	JsonProperties prop;
 	Map<String, String> propMap;
+	File file;
 	
 	@Before
 	public void configure() {
@@ -74,8 +83,9 @@ public class TestProtocol {
 		
 		colSchema = new ArrayList<>();
 		colSchema.add(schema);
-		propMap = new HashMap();
+		propMap = new HashMap<String, String>();
 		propMap.put(propName, propValue);
+		file = null;
 	}
 
 	@Test
@@ -87,7 +97,7 @@ public class TestProtocol {
 	}
 	
 	@Test
-	public void testCopyProtocolAndEquals() {
+	public void testCopyProtocolAndEquals() throws IOException {
 		
 		Protocol p2 = new Protocol(p1);
 		assertEquals(p1, p2);
@@ -98,21 +108,29 @@ public class TestProtocol {
 		Protocol p4 = new Protocol(p3);
 		assertEquals(p3, p4);				//test equals
 		assertTrue(p3.equals(p4));
+		
 		assertTrue(p1.equals(p1));
 		assertFalse(p1.equals(p4));
 		assertFalse(p1.equals(pName));
 		Protocol p5 = new Protocol("other Name", null, namespace);			//to reach branch coverage
 		Protocol p6 = new Protocol(pName, null, "other namespace");
 		Protocol p7 = new Protocol(pName, "other doc", namespace);
-		Protocol p8 = new Protocol(pName, doc, namespace);
-		p8.addProp("property", "some value");
+		Protocol p8 = new Protocol(pName, nullDoc, namespace);
 		
-		Protocol p9 = Protocol.parse(jsonFormat + rightOneWayMsg);
+		Protocol p9 = new Protocol(pName, doc, namespace);
+		p9.addProp("property", "some value");
+		
+		InputStream inStream = getClass().getResourceAsStream("/example.avpr");
+		InputStream inStream2 = getClass().getResourceAsStream("/exampleMsgDifferent.avpr");
+		
+		Protocol p10 = Protocol.parse(jsonFormat + rightOneWayMsg);
 		assertFalse(p1.equals(p5));
 		assertFalse(p1.equals(p6));
 		assertFalse(p1.equals(p7));
 		assertFalse(p1.equals(p8));
 		assertFalse(p1.equals(p9));
+		assertFalse(p1.equals(p10));
+		assertFalse(Protocol.parse(inStream).equals(Protocol.parse(inStream2)));
 	}
 	
 	@Test
@@ -139,14 +157,6 @@ public class TestProtocol {
 		p1 = new Protocol(pName, doc, namespace);
 		assertEquals(doc, p1.getDoc());
 		assertNotNull(Protocol.parse(toUse).toString());
-		
-		p1 = Protocol.parse(jsonFormat + rightOneWayMsg);
-		toUse = p1.toString();
-		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(toUse).toString());
-		
-		p1 = Protocol.parse(jsonFormatNoTypes + noMsg);
-		toUse = p1.toString();
-		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(toUse).toString());
 
 		assertNotNull(p1.getMD5());
 		assertNotNull(p1.getMD5());				//branch coverage
@@ -198,7 +208,62 @@ public class TestProtocol {
 
 		assertNotNull(Protocol.parse(jsonFormat + rightTwoWayMsg).getMessages());
 		assertNotNull(Protocol.parse(jsonFormat + rightOneWayMsg).getMessages());
+		
+		p1 = Protocol.parse(jsonFormat + rightOneWayMsg);
+		toUse = p1.toString();
+		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(toUse).toString());
+		
+		p1 = Protocol.parse(jsonFormatNoTypes + noMsg);
+		toUse = p1.toString();
+		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(toUse).toString());
+		
+		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(jsonFormat + rightOneWayMsg).toString());
+		assertEquals(jsonFormat + rightTwoWayMsg, Protocol.parse(jsonFormat + rightTwoWayMsg).toString());
+		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(jsonFormat, rightOneWayMsg).toString());
+		assertEquals(jsonFormat + rightTwoWayMsg, Protocol.parse(jsonFormat, rightTwoWayMsg).toString());
 	}
+	
+	public void testParseInputStream() throws IOException {
+
+		InputStream inStream = getClass().getResourceAsStream("/example.avpr");
+		assertNotNull(Protocol.parse(inStream).toString());
+	}
+
+	@Test
+	public void testParseFile() throws IOException {
+
+		try {
+			file = new File(getClass().getResource("/example.avpr").toURI());
+			assertEquals(Files.readString(Paths.get(getClass().getResource("/example.avpr").toURI())).replaceAll("[\\n\\t ]", ""), Protocol.parse(file).toString());
+		} catch (URISyntaxException | IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			file = new File(getClass().getResource("/exampleNoMsg.avpr").toURI());
+			assertNotNull(Protocol.parse(file).toString());
+			assertEquals("{}", Protocol.parse(file).getMessages().toString());
+		} catch (URISyntaxException | IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Test(expected=SchemaParseException.class)
+	public void testParseInputStreamWrong() throws IOException {
+		InputStream inStream = getClass().getResourceAsStream("/SchemaBuilder.avsc");
+		assertEquals(inStream.toString(), Protocol.parse(inStream).toString());
+	}
+	
+	@Test(expected=SchemaParseException.class)
+	public void testParseFileWrong() throws IOException {
+		File file = null;
+		try {
+			file = new File(getClass().getResource("/SchemaBuilder.avsc").toURI());
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		assertEquals(file.toString(), Protocol.parse(file).toString());
+	}
+	
 	
 	@Test
 	public void testOneWayMessage() {
@@ -241,11 +306,13 @@ public class TestProtocol {
 		Message msg2 = p1.createMessage(msg, schema, schema, schema);
 		assertFalse(msg2.isOneWay());
 		Message msg3 = p1.createMessage(msgName, doc, prop, schema, schema2, schema);
-		assertFalse(msg2.isOneWay());
+		assertFalse(msg3.isOneWay());
 		Message msg4 = p1.createMessage(msgName, doc, propMap, schema, schema, schema2);
-		assertFalse(msg2.isOneWay());
-		Message msg5 = p1.createMessage(msgName, doc, schema);
-		
+		assertFalse(msg4.isOneWay());
+		Message msg5 = p1.createMessage(msgName, doc, prop, schema, schema, schema2);
+		assertFalse(msg5.isOneWay());
+		Message msg6 = p1.createMessage(msgName, doc, schema);
+		assertTrue(msg6.isOneWay());
 		
 		assertTrue(msg.equals(msg));
 		assertFalse(msg.equals(msgName));
@@ -253,6 +320,7 @@ public class TestProtocol {
 		assertFalse(msg.equals(msg3));
 		assertFalse(msg.equals(msg4));
 		assertFalse(msg.equals(msg5));
+		assertFalse(msg.equals(msg6));
 	}
 	
 	@Test
@@ -262,8 +330,7 @@ public class TestProtocol {
 		Message msg2 = p1.createMessage(msg, schema);
 		Message msg3 = p1.createMessage(msgName, doc, schema);
 		Message msg4 = p1.createMessage("otherName", doc, schema);
-		schema = Schema.createRecord("otherName", docSchema, namespace, false);
-		Message msg5 = p1.createMessage("otherName", doc, schema);
+		Message msg5 = p1.createMessage(msgName, doc, schema2);
 				
 		assertEquals(pName, msg2.getName());
 		assertNull(msg.getObjectProp(namespace));
