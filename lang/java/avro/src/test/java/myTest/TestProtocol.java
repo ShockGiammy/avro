@@ -1,4 +1,4 @@
-package test;
+package myTest;
 
 import static org.junit.Assert.*;
 
@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.JsonProperties;
 import org.apache.avro.Protocol;
 import org.apache.avro.Protocol.Message;
@@ -30,6 +29,7 @@ public class TestProtocol {
 	String nullDoc;
 	String namespace;
 	Protocol p1;
+	Protocol p2;
 	String propName;
 	String propValue;
 	String msgName;
@@ -38,6 +38,7 @@ public class TestProtocol {
 	String schemaName;
 	String docSchema;
 	Message msg;
+	Message msg2;
 	Collection<Schema> colSchema;
 	String jsonFormat;					//white box because no other ways
 	String jsonFormatNoTypes;
@@ -52,6 +53,8 @@ public class TestProtocol {
 	JsonProperties prop;
 	Map<String, String> propMap;
 	File file;
+	InputStream inStream;
+	InputStream inStream2;
 	
 	@Before
 	public void configure() {
@@ -88,50 +91,65 @@ public class TestProtocol {
 		file = null;
 	}
 
-	@Test
+	/*@Test
 	public void testPropEquals() {
 		
+		//p1.addProp("a", "1");
+
 		Protocol p2 = new Protocol(pName, doc, namespace);
 		p2.addProp("a", "2");
 		assertFalse(p1.equals(p2));
-	}
+	}*/
+	
 	
 	@Test
-	public void testCopyProtocolAndEquals() throws IOException {
+	public void testCopyProtocol() throws IOException {
 		
-		Protocol p2 = new Protocol(p1);
+		p2 = new Protocol(p1);
 		assertEquals(p1, p2);
 		assertTrue(p1.equals(p2));
 		
-		Protocol p3 = new Protocol(pName, namespace);
-		p1.addProp("a", "1");
-		Protocol p4 = new Protocol(p3);
-		assertEquals(p3, p4);				//test equals
-		assertTrue(p3.equals(p4));
+		p1.addProp(propName, propValue);
+		p2 = new Protocol(pName, namespace);
+		assertFalse(p1.equals(p2));
 		
-		assertTrue(p1.equals(p1));
-		assertFalse(p1.equals(p4));
-		assertFalse(p1.equals(pName));
-		Protocol p5 = new Protocol("other Name", null, namespace);			//to reach branch coverage
-		Protocol p6 = new Protocol(pName, null, "other namespace");
-		Protocol p7 = new Protocol(pName, "other doc", namespace);
-		Protocol p8 = new Protocol(pName, nullDoc, namespace);
-		
-		Protocol p9 = new Protocol(pName, doc, namespace);
-		p9.addProp("property", "some value");
-		
-		InputStream inStream = getClass().getResourceAsStream("/example.avpr");
-		InputStream inStream2 = getClass().getResourceAsStream("/exampleMsgDifferent.avpr");
-		
-		Protocol p10 = Protocol.parse(jsonFormat + rightOneWayMsg);
-		assertFalse(p1.equals(p5));
-		assertFalse(p1.equals(p6));
-		assertFalse(p1.equals(p7));
-		assertFalse(p1.equals(p8));
-		assertFalse(p1.equals(p9));
-		assertFalse(p1.equals(p10));
-		assertFalse(Protocol.parse(inStream).equals(Protocol.parse(inStream2)));
+		p2 = new Protocol(p1);
+		assertEquals(p1, p2);				//test equals
+		assertTrue(p1.equals(p2));
 	}
+	
+	@Test
+	public void testEquals() throws IOException {
+		
+		
+		p1.addProp(propName, propValue);
+
+		assertTrue(p1.equals(p1));
+		assertFalse(p1.equals(pName));
+		
+		p2 = new Protocol(pName, namespace);
+		assertFalse(p1.equals(p2));
+		
+		p2 = new Protocol("other Name", null, namespace);			//to reach branch coverage
+		assertFalse(p1.equals(p2));
+		
+		p2 = new Protocol(pName, null, "other namespace");
+		assertFalse(p1.equals(p2));
+		
+		p2 = new Protocol(pName, "other doc", namespace);
+		assertFalse(p1.equals(p2));
+		
+		p2 = new Protocol(pName, nullDoc, namespace);
+		assertFalse(p1.equals(p2));
+		
+		p2 = new Protocol(pName, doc, namespace);
+		p2.addProp(propName, "other value");
+		assertFalse(p1.equals(p2));
+		
+		p2 = Protocol.parse(jsonFormat + rightOneWayMsg);
+		assertFalse(p1.equals(p2));
+	}
+	
 	
 	@Test
 	public void setAndTestTypes() {
@@ -151,6 +169,7 @@ public class TestProtocol {
 		assertEquals(nullDoc, p1.getDoc());
 		assertEquals(propValue, p1.getProp(propName));
 		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(toUse).toString());
+		
 		toUse = p1.toString(true);
 		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(toUse).toString());
 		
@@ -188,23 +207,11 @@ public class TestProtocol {
 		p1.createMessage(pName, doc, prop, schema).toString();
 	}
 	
-	@Test(expected=NullPointerException.class)
-	public void nullPointer2() {
-		p1.createMessage(msgName, doc, prop, schema, schema2, schema).toString();
-	}
 	
-	@Test(expected=NullPointerException.class)
-	public void nullPointer3() {
-		p1.createMessage(msgName, doc, schema, schema, schema).hashCode();
-	}
-	
-	@Test(expected=NullPointerException.class)
-	public void nullPointer4() {
-		p1.createMessage(msgName, doc, schema, schema, schema).hashCode();
-	}
+	//test Protocol.parse
 	
 	@Test
-	public void testParseProtocol() {
+	public void testParseProtocolString() {
 
 		assertNotNull(Protocol.parse(jsonFormat + rightTwoWayMsg).getMessages());
 		assertNotNull(Protocol.parse(jsonFormat + rightOneWayMsg).getMessages());
@@ -219,6 +226,7 @@ public class TestProtocol {
 		
 		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(jsonFormat + rightOneWayMsg).toString());
 		assertEquals(jsonFormat + rightTwoWayMsg, Protocol.parse(jsonFormat + rightTwoWayMsg).toString());
+		
 		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(jsonFormat, rightOneWayMsg).toString());
 		assertEquals(jsonFormat + rightTwoWayMsg, Protocol.parse(jsonFormat, rightTwoWayMsg).toString());
 	}
@@ -227,6 +235,14 @@ public class TestProtocol {
 
 		InputStream inStream = getClass().getResourceAsStream("/example.avpr");
 		assertNotNull(Protocol.parse(inStream).toString());
+	}
+	
+	@Test
+	public void testParseDifferentInputStream() throws IOException {
+		
+		inStream = getClass().getResourceAsStream("/example.avpr");
+		inStream2 = getClass().getResourceAsStream("/exampleMsgDifferent.avpr");
+		assertFalse(Protocol.parse(inStream).equals(Protocol.parse(inStream2)));
 	}
 
 	@Test
@@ -265,6 +281,8 @@ public class TestProtocol {
 	}
 	
 	
+	//test One-Way Message
+	
 	@Test
 	public void testOneWayMessage() {
 		
@@ -276,11 +294,47 @@ public class TestProtocol {
 		assertEquals(msgName, msg.getName());
 		assertEquals("[]",msg.getErrors().toString());
 		assertEquals("\"null\"", msg.getResponse().toString());
+		assertNull(msg.getObjectProp(namespace));
 		assertTrue(msg.isOneWay());
-		//fail(msg.toString());
-		//assertNotNull(msg.hashCode());
 	}
 	
+	
+	
+	@Test
+	public void testCreateOneWayMessage() {
+
+		msg = p1.createMessage(msgName, doc, schema);
+		assertTrue(msg.equals(msg));
+		
+		msg2 = p1.createMessage(msg, schema);
+		assertEquals(pName, msg2.getName());
+		assertFalse(msg.equals(msg2));
+		
+		assertFalse(msg.equals(msgName));				// to reach branch coverage
+		
+		msg2 = p1.createMessage(msgName, doc, schema);
+		assertTrue(msg2.isOneWay());
+		assertTrue(msg.equals(msg2));
+
+		
+		msg2 = p1.createMessage("otherName", doc, schema);
+		assertTrue(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
+		
+		msg2 = p1.createMessage(msgName, doc, schema2);
+		assertTrue(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
+
+		msg2 = p1.createMessage(pName, doc, prop, schema);
+		assertTrue(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
+		
+		msg2 = p1.createMessage(pName, doc, propMap, schema);
+		assertTrue(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
+	}
+	
+	//test Two-Way Message
 	@Test
 	public void testTwoWayMessage() {
 		
@@ -293,60 +347,33 @@ public class TestProtocol {
 		assertEquals(msgName, msg.getName());
 		assertEquals(schema, msg.getErrors());
 		assertEquals(schema, msg.getResponse());
-		
-		//System.out.println(msg);
-		//fail(msg.toString());
-		//assertNotNull(msg.hashCode());
 	}
 	
 	@Test
 	public void testCreateTwoWayMessage() {
 		
 		msg = p1.createMessage(msgName, doc, schema, schema, schema);
-		Message msg2 = p1.createMessage(msg, schema, schema, schema);
+		assertTrue(msg.equals(msg));
+		assertFalse(msg.equals(msgName));	// to reach branch coverage
+		
+		msg2 = p1.createMessage(msg, schema, schema, schema);
 		assertFalse(msg2.isOneWay());
-		Message msg3 = p1.createMessage(msgName, doc, prop, schema, schema2, schema);
-		assertFalse(msg3.isOneWay());
-		Message msg4 = p1.createMessage(msgName, doc, propMap, schema, schema, schema2);
-		assertFalse(msg4.isOneWay());
-		Message msg5 = p1.createMessage(msgName, doc, prop, schema, schema, schema2);
-		assertFalse(msg5.isOneWay());
-		Message msg6 = p1.createMessage(msgName, doc, schema);
-		assertTrue(msg6.isOneWay());
-		
-		assertTrue(msg.equals(msg));
-		assertFalse(msg.equals(msgName));
 		assertTrue(msg.equals(msg2));		// to reach branch coverage
-		assertFalse(msg.equals(msg3));
-		assertFalse(msg.equals(msg4));
-		assertFalse(msg.equals(msg5));
-		assertFalse(msg.equals(msg6));
-	}
-	
-	@Test
-	public void testCreateOneWayMessage() {
-
-		msg = p1.createMessage(msgName, doc, schema);
-		Message msg2 = p1.createMessage(msg, schema);
-		Message msg3 = p1.createMessage(msgName, doc, schema);
-		Message msg4 = p1.createMessage("otherName", doc, schema);
-		Message msg5 = p1.createMessage(msgName, doc, schema2);
-				
-		assertEquals(pName, msg2.getName());
-		assertNull(msg.getObjectProp(namespace));
-		assertTrue(msg.equals(msg));
-		assertFalse(msg.equals(msg2));
-		assertFalse(msg.equals(msgName));				// to reach branch coverage
-		assertTrue(msg.equals(msg3));
-		assertFalse(msg.equals(msg4));
-		assertFalse(msg.equals(msg5));
 		
-
-		Message msg6 = p1.createMessage(pName, doc, prop, schema);
-		assertTrue(msg6.isOneWay());
-		assertFalse(msg.equals(msg6));
-		Message msg7 = p1.createMessage(pName, doc, propMap, schema);
-		assertTrue(msg7.isOneWay());
-		assertFalse(msg.equals(msg7));
+		msg2 = p1.createMessage(msgName, doc, prop, schema, schema2, schema);
+		assertFalse(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
+		
+		msg2 = p1.createMessage(msgName, doc, propMap, schema, schema, schema2);
+		assertFalse(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
+		
+		msg2 = p1.createMessage(msgName, doc, prop, schema, schema, schema2);
+		assertFalse(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
+		
+		msg2 = p1.createMessage(msgName, doc, schema);
+		assertTrue(msg2.isOneWay());
+		assertFalse(msg.equals(msg2));
 	}
 }
