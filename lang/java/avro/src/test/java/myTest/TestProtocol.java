@@ -71,7 +71,6 @@ public class TestProtocol {
 		p1.addProp(propName, propValue);
 		schema = Schema.createRecord(schemaName, docSchema, namespace, false);
 		schema2 = Schema.createRecord(pName, docSchema, namespace, true);
-		//+ "\"doc\"" + doc + "",\""
 		jsonFormat = "{\"protocol\":\"" + pName + "\",\"namespace\":\"" + namespace + "\",\"" + propName + "\":\"" +
 				propValue + "\",";
 		jsonFormatNoTypes = jsonFormat + "\"types\":[],";
@@ -90,16 +89,6 @@ public class TestProtocol {
 		propMap.put(propName, propValue);
 		file = null;
 	}
-
-	/*@Test
-	public void testPropEquals() {
-		
-		//p1.addProp("a", "1");
-
-		Protocol p2 = new Protocol(pName, doc, namespace);
-		p2.addProp("a", "2");
-		assertFalse(p1.equals(p2));
-	}*/
 	
 	
 	@Test
@@ -177,7 +166,6 @@ public class TestProtocol {
 		assertEquals(doc, p1.getDoc());
 		assertNotNull(Protocol.parse(toUse).toString());
 
-		assertNotNull(p1.getMD5());
 		assertNotNull(p1.getMD5());				//branch coverage
 		assertNotNull(p1.hashCode());
 	}
@@ -208,8 +196,7 @@ public class TestProtocol {
 	}
 	
 	
-	//test Protocol.parse
-	
+	//test Protocol.parse	
 	@Test
 	public void testParseProtocolString() {
 
@@ -281,8 +268,7 @@ public class TestProtocol {
 	}
 	
 	
-	//test One-Way Message
-	
+	//test One-Way Message	
 	@Test
 	public void testOneWayMessage() {
 		
@@ -297,8 +283,6 @@ public class TestProtocol {
 		assertNull(msg.getObjectProp(namespace));
 		assertTrue(msg.isOneWay());
 	}
-	
-	
 	
 	@Test
 	public void testCreateOneWayMessage() {
@@ -333,6 +317,7 @@ public class TestProtocol {
 		assertTrue(msg2.isOneWay());
 		assertFalse(msg.equals(msg2));
 	}
+	
 	
 	//test Two-Way Message
 	@Test

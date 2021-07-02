@@ -126,7 +126,7 @@ public class TestSchema {
 		assertNotNull(schemaString);
 	}
 	
-	@Test//(expected = NullPointerException.class)
+	@Test
   	public void testSchemaWithNullName() {
     
   		Schema.createRecord(null, docSchema, namespace, false);
