@@ -107,9 +107,16 @@
     	<version>1.6.7</version>
     	<configuration>
           <targetClasses>
-            <param>org.apache.avro.Schema</param>
-            <param>org.apache.avro.Protocol</param>
+            <param>org.apache.avro.Schema*</param>
+            <param>org.apache.avro.Protocol*</param>
           </targetClasses>
+          <excludedClasses>
+          	<param>org.apache.avro.SchemaBuilder*</param>
+          	<param>org.apache.avro.SchemaCompatibility*</param>
+          	<param>org.apache.avro.SchemaNormalization*</param>
+          	<param>org.apache.avro.SchemaValidationException*</param>
+          	<param>org.apache.avro.SchemaValidatorBuilder*</param>
+          </excludedClasses>
           <targetTests>
             <param>myTest.TestProtocol</param>
             <param>myTest.TestSchema</param>
