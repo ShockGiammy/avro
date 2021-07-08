@@ -113,8 +113,8 @@
             <!-- compile only test protocols and schemas and place them in the classpath. -->
             <configuration>
               <sourceDirectory></sourceDirectory>
-              <testSourceDirectory>${parent.project.basedir}/../../../../share/test/schemas/</testSourceDirectory>
-              <testOutputDirectory>${project.build.directory}/generated-test-sources/java</testOutputDirectory>
+              <!--<testSourceDirectory>${parent.project.basedir}/../../../../share/test/schemas/</testSourceDirectory>
+              <testOutputDirectory>${project.build.directory}/generated-test-sources/java</testOutputDirectory> -->
             </configuration>
           </execution>
           <execution>
