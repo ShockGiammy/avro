@@ -49,6 +49,10 @@ public class TestProtocol {
 	String wrongOneWayMsg;
 	String rightTwoWayMsg;
 	String noBoolOneWayMsg;
+	String wrongMsgName;
+	String wrongMsgType;
+	String wrongMsgOneWayErrors;
+	String wrongMsgOneWayResponse;
 	String toUse;
 	JsonProperties prop;
 	Map<String, String> propMap;
@@ -67,8 +71,7 @@ public class TestProtocol {
 		msgName = "fooMessage";
 		schemaName = "sName";
 		docSchema = "doc";
-		p1 = new Protocol(pName, nullDoc, namespace);
-		p1.addProp(propName, propValue);
+		p1 = new Protocol(pName, doc, namespace);
 		schema = Schema.createRecord(schemaName, docSchema, namespace, false);
 		schema2 = Schema.createRecord(pName, docSchema, namespace, true);
 		jsonFormat = "{\"protocol\":\"" + pName + "\",\"namespace\":\"" + namespace + "\",\"" + propName + "\":\"" +
@@ -82,6 +85,12 @@ public class TestProtocol {
 		rightTwoWayMsg = baseMsg + ",\"response\":\"Greeting\"}}}";
 		noBoolOneWayMsg = baseMsg + ",\"one-way\":\"true\"}}}";
 		rightOneWayMsg = baseMsg + ",\"response\":\"null\",\"one-way\":true}}}";
+		wrongMsgName = "\"types\":[{\"type\":\"record\",\"name\":\"Greeting\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"}]}],"
+				+ "\"messages\":{\"" + msgName + "\":{\"request\":[{\"type\":\"Greeting\"}]} } }";;
+		wrongMsgType = "\"types\":[{\"type\":\"record\",\"name\":\"Greeting\",\"fields\":[{\"name\":\"message\",\"type\":\"string\"}]}],"
+				+ "\"messages\":{\"" + msgName + "\":{\"request\":[{\"name\":\"greeting\"}]} } }";;
+		wrongMsgOneWayErrors = baseMsg + ",\"response\":\"null\",\"one-way\":true,\"errors\":\"Greeting\"}}}";
+		wrongMsgOneWayResponse = baseMsg + ",\"response\":\"Greeting\",\"one-way\":true}}}";
 		
 		colSchema = new ArrayList<>();
 		colSchema.add(schema);
@@ -91,11 +100,10 @@ public class TestProtocol {
 	}
 	
 	
-	@Test
+	/*@Test
 	public void testCopyProtocol() throws IOException {
 		
 		p2 = new Protocol(p1);
-		assertEquals(p1, p2);
 		assertTrue(p1.equals(p2));
 		
 		p1.addProp(propName, propValue);
@@ -103,26 +111,33 @@ public class TestProtocol {
 		assertFalse(p1.equals(p2));
 		
 		p2 = new Protocol(p1);
-		assertEquals(p1, p2);				//test equals
 		assertTrue(p1.equals(p2));
-	}
+	}*/
 	
 	@Test
 	public void testEquals() throws IOException {
 		
+		assertTrue(p1.equals(p1));			//same object
+		
+		assertFalse(p1.equals(pName));		//not valid object
+		
+		p2 = new Protocol("other Name", namespace);
+		assertFalse(p1.equals(p2));			//valid object false
+		
+		p2 = new Protocol(p1);
+		assertTrue(p1.equals(p2));			//valid object true
+		
+		assertFalse(p1.equals(null));		//null object
+	}
+	
+	@Test
+	public void testEquals2() throws IOException {
 		
 		p1.addProp(propName, propValue);
-
-		assertTrue(p1.equals(p1));
-		assertFalse(p1.equals(pName));
-		
-		p2 = new Protocol(pName, namespace);
+		p2 = new Protocol(pName, doc, namespace);			//to reach branch coverage
 		assertFalse(p1.equals(p2));
 		
-		p2 = new Protocol("other Name", null, namespace);			//to reach branch coverage
-		assertFalse(p1.equals(p2));
-		
-		p2 = new Protocol(pName, null, "other namespace");
+		p2 = new Protocol(pName, doc, "other namespace");
 		assertFalse(p1.equals(p2));
 		
 		p2 = new Protocol(pName, "other doc", namespace);
@@ -151,43 +166,20 @@ public class TestProtocol {
 	@Test
 	public void testGetMethods() throws NoSuchAlgorithmException {
 
-		toUse = p1.toString();
+		p1.addProp(propName, propValue);
 		assertEquals(pName, p1.getName());
 		assertEquals(namespace, p1.getNamespace());
 		
-		assertEquals(nullDoc, p1.getDoc());
-		assertEquals(propValue, p1.getProp(propName));
-		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(toUse).toString());
-		
-		toUse = p1.toString(true);
-		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(toUse).toString());
-		
-		p1 = new Protocol(pName, doc, namespace);
 		assertEquals(doc, p1.getDoc());
-		assertNotNull(Protocol.parse(toUse).toString());
+		assertEquals(propValue, p1.getProp(propName));
+		
+		p1 = new Protocol(pName, nullDoc, namespace);
+		assertEquals(nullDoc, p1.getDoc());
+		p1.addProp(propName, propValue);
+		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(p1.toString()).toString());
 
 		assertNotNull(p1.getMD5());				//branch coverage
 		assertNotNull(p1.hashCode());
-	}
-	
-	@Test(expected = SchemaParseException.class)
-	public void testSchemaParseException1() {
-		Protocol.parse(jsonFormat + wrongMsg).toString();
-	}
-	
-	@Test(expected = SchemaParseException.class)
-	public void testSchemaParseException2() {
-		Protocol.parse(jsonFormat + wrongOneWayMsg).toString();
-	}
-	
-	@Test(expected = SchemaParseException.class)
-	public void testSchemaParseException3() {
-		Protocol.parse(jsonFormat + noBoolOneWayMsg).toString();
-	}
-	
-	@Test(expected = SchemaParseException.class)
-	public void testSchemaParseException4() {
-		Protocol.parse(rightOneWayMsg);
 	}
 	
 	@Test(expected=NullPointerException.class)
@@ -199,41 +191,42 @@ public class TestProtocol {
 	//test Protocol.parse	
 	@Test
 	public void testParseProtocolString() {
-
-		assertNotNull(Protocol.parse(jsonFormat + rightTwoWayMsg).getMessages());
-		assertNotNull(Protocol.parse(jsonFormat + rightOneWayMsg).getMessages());
-		
-		p1 = Protocol.parse(jsonFormat + rightOneWayMsg);
-		toUse = p1.toString();
-		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(toUse).toString());
-		
-		p1 = Protocol.parse(jsonFormatNoTypes + noMsg);
-		toUse = p1.toString();
-		assertEquals(jsonFormatNoTypes + noMsg, Protocol.parse(toUse).toString());
 		
 		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(jsonFormat + rightOneWayMsg).toString());
 		assertEquals(jsonFormat + rightTwoWayMsg, Protocol.parse(jsonFormat + rightTwoWayMsg).toString());
 		
 		assertEquals(jsonFormat + rightOneWayMsg, Protocol.parse(jsonFormat, rightOneWayMsg).toString());
 		assertEquals(jsonFormat + rightTwoWayMsg, Protocol.parse(jsonFormat, rightTwoWayMsg).toString());
+		
+		assertNotNull(Protocol.parse(jsonFormat + rightTwoWayMsg).getMessages());
+		assertNotNull(Protocol.parse(jsonFormat + rightOneWayMsg).getMessages());
+
 	}
 	
-	public void testParseInputStream() throws IOException {
+	public void testParseInputStream() {
 
-		InputStream inStream = getClass().getResourceAsStream("/example.avpr");
-		assertNotNull(Protocol.parse(inStream).toString());
+		inStream = getClass().getResourceAsStream("/example.avpr");
+		try {
+			assertEquals(Files.readString(Paths.get(getClass().getResource("/example.avpr").toURI())).replaceAll("[\\n\\t ]", ""), Protocol.parse(inStream).toString());
+		} catch (IOException | URISyntaxException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Test
-	public void testParseDifferentInputStream() throws IOException {
+	public void testParseDifferentInputStream() {
 		
 		inStream = getClass().getResourceAsStream("/example.avpr");
 		inStream2 = getClass().getResourceAsStream("/exampleMsgDifferent.avpr");
-		assertFalse(Protocol.parse(inStream).equals(Protocol.parse(inStream2)));
+		try {
+			assertFalse(Protocol.parse(inStream).equals(Protocol.parse(inStream2)));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
-	public void testParseFile() throws IOException {
+	public void testParseFile() {
 
 		try {
 			file = new File(getClass().getResource("/example.avpr").toURI());
@@ -254,6 +247,7 @@ public class TestProtocol {
 	public void testParseInputStreamWrong() throws IOException {
 		InputStream inStream = getClass().getResourceAsStream("/SchemaBuilder.avsc");
 		assertEquals(inStream.toString(), Protocol.parse(inStream).toString());
+		fail("SchemaParseException: No protocol name specified");
 	}
 	
 	@Test(expected=SchemaParseException.class)
@@ -265,8 +259,56 @@ public class TestProtocol {
 			e.printStackTrace();
 		}
 		assertEquals(file.toString(), Protocol.parse(file).toString());
+		fail("SchemaParseException: No protocol name specified");
 	}
 	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException1() {
+		Protocol.parse(jsonFormat + wrongMsg).toString();
+		fail("No request specified");
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException2() {
+		Protocol.parse(jsonFormat + wrongOneWayMsg).toString();
+		fail("No response specified");
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException3() {
+		Protocol.parse(jsonFormat + noBoolOneWayMsg).toString();
+		fail("one-way must be boolean");
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException4() {
+		Protocol.parse(rightOneWayMsg);
+		fail("No protocol specified");
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException5() {
+		Protocol.parse(jsonFormat + wrongMsgName);
+		fail("No param name");
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException6() {
+		Protocol.parse(jsonFormat + wrongMsgType);
+		fail("No param type");
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException7() {
+		Protocol.parse(jsonFormat + wrongMsgOneWayErrors);
+		fail("one-way can't have errors");
+	}
+	
+	@Test(expected = SchemaParseException.class)
+	public void testSchemaParseException8() {
+		Protocol.parse(jsonFormat + wrongMsgOneWayResponse);
+		fail("One way response must be null");
+	}
 	
 	//test One-Way Message	
 	@Test
@@ -285,7 +327,7 @@ public class TestProtocol {
 	}
 	
 	@Test
-	public void testCreateOneWayMessage() {
+	public void testCreateAndEqualsOneWayMessage() {
 
 		msg = p1.createMessage(msgName, doc, schema);
 		assertTrue(msg.equals(msg));
@@ -335,7 +377,7 @@ public class TestProtocol {
 	}
 	
 	@Test
-	public void testCreateTwoWayMessage() {
+	public void testCreateAndEqualsTwoWayMessage() {
 		
 		msg = p1.createMessage(msgName, doc, schema, schema, schema);
 		assertTrue(msg.equals(msg));

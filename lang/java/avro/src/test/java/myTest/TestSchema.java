@@ -24,7 +24,6 @@ import org.apache.avro.Schema.Field;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.Schema.Field.Order;
 import org.apache.avro.SchemaParseException;
-import org.apache.avro.generic.GenericData;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -80,56 +79,90 @@ public class TestSchema {
 		parser = new Schema.Parser();
 	}
 	
-	//test set fields
-
-	@Test(expected=AvroRuntimeException.class)
-	public void testDefaultRecordWithDuplicateFieldName() {
-
-		fields.add(new Field(fieldName, Schema.create(Type.NULL), null, null));
-		fields.add(new Field(fieldName, Schema.create(Type.INT), null, null));
-		schema.setFields(fields);
+	
+	//test Create(Type type)
+	@Test
+	public void testCreate() {
+		schema = Schema.create(Type.INT);
+		assertEquals(Type.INT, schema.getType());
+		schema = Schema.create(Type.NULL);
+		assertEquals(Type.NULL, schema.getType());
+		schema = Schema.create(Type.STRING);
+		assertEquals(Type.STRING, schema.getType());
+		schema = Schema.create(Type.BYTES);
+		assertEquals(Type.BYTES, schema.getType());
+		schema = Schema.create(Type.LONG);
+		assertEquals(Type.LONG, schema.getType());
+		schema = Schema.create(Type.FLOAT);
+		assertEquals(Type.FLOAT, schema.getType());
+		schema = Schema.create(Type.DOUBLE);
+		assertEquals(Type.DOUBLE, schema.getType());
+		schema = Schema.create(Type.BOOLEAN);
+		assertEquals(Type.BOOLEAN, schema.getType());
 	}
 	
 	@Test(expected=AvroRuntimeException.class)
-	public void testCallTwoTimesSetField() {
-
-		fields.add(new Field(fieldName, Schema.create(Type.NULL), null, null));
-		schema.setFields(fields);
-		schema.setFields(fields);
-		fail("AvroRuntime Fields are already set");
+	public void testCreateException() {
+		schema = Schema.create(Type.RECORD);
 	}
 	
-	//by implementation
-	@Test(expected=AvroRuntimeException.class)
-	public void testFieldAlreadyUsed() {
-
-		fields.add(new Field(fieldName, Schema.create(Type.NULL), null, null));
-		schema.setFields(fields);
-		schema2.setFields(fields);
-	}
 	
 	//Test schema record
-
 	@Test
 	public void testRecordWithNullDoc() {
 	  
 		schema = Schema.createRecord(schemaName, null, namespace, false);
-		String schemaString = schema.toString();
-		assertNotNull(schemaString);
+		assertNotNull(schema.toString());
+		assertEquals(schemaName, schema.getName());
+		assertEquals(null, schema.getDoc());
+		assertEquals(namespace, schema.getNamespace());
 	}
 
 	@Test
 	public void testRecordWithNullNamespace() {
 	  
 		schema = Schema.createRecord(schemaName, docSchema, null, false);
-		String schemaString = schema.toString();
-		assertNotNull(schemaString);
+		assertNotNull(schema.toString());
+		assertEquals(schemaName, schema.getName());
+		assertEquals(docSchema, schema.getDoc());
+		assertEquals(null, schema.getNamespace());
 	}
 	
 	@Test
   	public void testSchemaWithNullName() {
     
-  		Schema.createRecord(null, docSchema, namespace, false);
+  		schema = Schema.createRecord(null, docSchema, namespace, false);
+		assertNotNull(schema.toString());
+		assertEquals(null, schema.getName());
+		assertEquals(docSchema, schema.getDoc());
+		assertEquals(null, schema.getNamespace());
+  	}
+	
+	@Test
+	public void testRecordWithEmptyDoc() {
+	  
+		schema = Schema.createRecord(schemaName, "", namespace, false);
+		assertNotNull(schema.toString());
+		assertEquals(schemaName, schema.getName());
+		assertEquals("", schema.getDoc());
+		assertEquals(namespace, schema.getNamespace());
+	}
+
+	@Test
+	public void testRecordWithEmptyNamespace() {
+	  
+		schema = Schema.createRecord(schemaName, docSchema, "", false);
+		assertNotNull(schema.toString());
+		assertEquals(schemaName, schema.getName());
+		assertEquals(docSchema, schema.getDoc());
+		assertEquals(null, schema.getNamespace());
+	}
+	
+	@Test(expected = SchemaParseException.class)		//RECORD EMPTY NAME NON PARSABILI
+  	public void testSchemaWithEmptyName() {
+    
+  		Schema.createRecord("", docSchema, namespace, false);
+  		fail("SchemaParse Empty name");
   	}
 	
 	@Test(expected = NullPointerException.class)
@@ -137,6 +170,33 @@ public class TestSchema {
     
   		Schema.createRecord(schemaName, docSchema, namespace, false, null);
   		//manca controllo su fields = null;
+  	}
+	
+	@Test
+  	public void testSchemaWithEmptyFields() {
+    
+  		schema = Schema.createRecord(schemaName, docSchema, namespace, false, fields);
+		assertNotNull(schema.toString());
+  		assertEquals(0, schema.getFields().size()); 
+  	}
+	
+	@Test
+  	public void testSchemaWithOneField() {
+		
+		fields.add(field);
+  		schema = Schema.createRecord(schemaName, docSchema, namespace, false, fields);
+		assertNotNull(schema.toString());
+  		assertEquals(1, schema.getFields().size()); 
+  	}
+	
+	@Test
+  	public void testSchemaWithMoreFields() {
+    
+		fields.add(field);
+		fields.add(field2);
+  		schema = Schema.createRecord(schemaName, docSchema, namespace, false, fields);
+		assertNotNull(schema.toString());
+  		assertEquals(2, schema.getFields().size()); 
   	}
 	
 	@Test
@@ -169,6 +229,70 @@ public class TestSchema {
 		assertFalse(schema.isError());
 	}
   
+	
+	@Test
+  	public void testValidateName1() {
+  		schema = Schema.createRecord("_" + schemaName, docSchema, namespace, false);
+  		assertEquals("_" + schemaName, schema.getName());
+  	}
+  
+  	@Test
+  	public void testValidateName2() {
+  		schema = Schema.createRecord(schemaName + "_", docSchema, namespace, false);
+  		assertEquals(schemaName + "_", schema.getName());
+  	}
+  	
+  	@Test(expected = SchemaParseException.class)
+  	public void testValidateName3() {
+  		schema = Schema.createRecord(schemaName + "?", docSchema, namespace, false);
+  	}
+  
+  	@Test(expected = SchemaParseException.class)
+  	public void testValidateName4() {
+  		schema = Schema.createRecord("1" + schemaName, docSchema, namespace, false);
+  	}
+  	
+	
+	@Test
+  	public void testIsNullableOnRecord() {
+  		assertFalse(schema.isNullable());
+  	}
+	
+	
+	@Test(expected = AvroRuntimeException.class)
+  	public void testNotFieldSetted() {  
+  		schema.getField(fieldName);
+  	}
+	
+	//test set fields
+	@Test(expected=AvroRuntimeException.class)
+	public void testDefaultRecordWithDuplicateFieldName() {
+		
+		fields.add(new Field(fieldName, Schema.create(Type.NULL), null, null));
+		fields.add(new Field(fieldName, Schema.create(Type.INT), null, null));
+		schema.setFields(fields);
+		fail("Duplicate fields");
+	}
+		
+	@Test(expected=AvroRuntimeException.class)
+	public void testCallTwoTimesSetField() {
+		
+		fields.add(new Field(fieldName, Schema.create(Type.NULL), null, null));
+		schema.setFields(fields);
+		schema.setFields(fields);
+		fail("AvroRuntime Fields are already set");
+	}
+			
+	//by implementation
+	@Test(expected=AvroRuntimeException.class)
+	public void testFieldAlreadyUsed() {
+		
+		fields.add(new Field(fieldName, Schema.create(Type.NULL), null, null));
+		schema.setFields(fields);
+		schema2.setFields(fields);
+		fail("Field already used");
+	}
+  
 	@Test
 	public void testSchemaWithFields() {
 	  
@@ -180,13 +304,19 @@ public class TestSchema {
 		assertEquals(2, schema.getFields().size()); 
 	}
 	
-	@Test(expected = AvroRuntimeException.class)
-  	public void testNotFieldSetted() {
-	  
-  		schema.getField(fieldName);
+	
+	//test to reach condition coverage
+  	@Test(expected = SchemaParseException.class)
+  	public void testValidateName() {
+  		field = new Field(null, Schema.create(Type.NULL), null, null);
   	}
 	
-  
+	
+	
+	
+	
+	
+	//test equals
 	@Test
 	public void equalsFieldsAndPrettyToString() {
 	  
@@ -230,13 +360,7 @@ public class TestSchema {
 		field.addAlias(propName);
 		assertFalse(field.aliases().isEmpty());
 	}
-	
-	@Test
-  	public void testIsNullableOnRecord() {
 
-  		assertFalse(schema.isNullable());
-  	}
-  
   	@Test
   	public void testAddPropString() {
 	  
@@ -306,8 +430,6 @@ public class TestSchema {
   	  	schema.hasEnumSymbol(defaultValue);
     }
     
-  
-
   	
   	//test Union
   	@Test
@@ -469,7 +591,6 @@ public class TestSchema {
   	}
   	
   	//test Map
-
   	@Test
   	public void testIsUnionOnMap() {
 	  
@@ -480,44 +601,8 @@ public class TestSchema {
   	}
   	
   	
-  //test On Field (validate Name)
-    
-  	//test to reach condition coverage
-  	@Test(expected = SchemaParseException.class)
-  	public void testValidateName() {
-  		field = new Field(null, Schema.create(Type.NULL), null, null);
-  	}
-  
-  	@Test(expected = SchemaParseException.class)
-  	public void testValidateName2() {
-  		field = new Field("", Schema.create(Type.NULL), null, null);
-  	}
-  
   	@Test
-  	public void testValidateName3() {
-  		field = new Field("_" + fieldName, Schema.create(Type.NULL), null, null);
-  		assertEquals("_" + fieldName, field.name());
-  	}
-  
-  	@Test
-  	public void testValidateName4() {
-  		field = new Field(fieldName + "_", Schema.create(Type.NULL), null, null);
-  		assertEquals(fieldName + "_", field.name());
-  	}
-  
-  	@Test(expected = SchemaParseException.class)
-  	public void testValidateName5() {
-  		field = new Field("1" + fieldName, Schema.create(Type.NULL), null, null);
-  	}
-  
-  	@Test(expected = SchemaParseException.class)
-  	public void testValidateName6() {
-  		field = new Field(fieldName + "?", Schema.create(Type.NULL), null, null);
-  	}
-
-  	
-  	@Test
-	public void copyFieldAndEquals() {			//condition coverage
+	public void testEquals() {			//condition coverage
 	  
 		assertEquals(field, field);
 		assertNotNull(field.pos());
@@ -537,8 +622,6 @@ public class TestSchema {
 	}
   	
   	
-  	
-
 
   	@Test
   	public void testSerialization() throws IOException, ClassNotFoundException {
@@ -573,7 +656,6 @@ public class TestSchema {
   
   	
   	//test ApplyAliases
-  	
   	@Test
   	public void testApplyAliasesRecord() {
 	  
@@ -608,98 +690,97 @@ public class TestSchema {
   		assertEquals(schema, Schema.applyAliases(schema, schema2));
   	}
   
-  @Test
-  public void testApplyAliasesMap() {
+  	@Test
+  	public void testApplyAliasesMap() {
 	  
-	  schema2 = Schema.createMap(Schema.create(Type.LONG));
+  		schema2 = Schema.createMap(Schema.create(Type.LONG));
 
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema.addAlias(defaultValue);
-	  schema.setFields(fields);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema.addAlias(defaultValue);
+	  	schema.setFields(fields);
+	  	assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createMap(Schema.create(Type.LONG));			//condition coverage
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+	  	schema = Schema.createMap(Schema.create(Type.LONG));			//condition coverage
+	  	assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createUnion(Schema.create(Type.LONG));
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+	  	schema = Schema.createUnion(Schema.create(Type.LONG));
+	  	assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createFixed(schemaName, docSchema, namespace, 10);
-	  schema.addAlias(defaultValue);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+	  	schema = Schema.createFixed(schemaName, docSchema, namespace, 10);
+	  	schema.addAlias(defaultValue);
+	  	assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createArray(Schema.create(Type.LONG));
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+	  	schema = Schema.createArray(Schema.create(Type.LONG));
+	  	assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createEnum(schemaName, docSchema, namespace, Collections.singletonList("value"));
-	  schema.addAlias(defaultValue);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
-  }
+	  	schema = Schema.createEnum(schemaName, docSchema, namespace, Collections.singletonList("value"));
+	  	schema.addAlias(defaultValue);
+	  	assertEquals(schema, Schema.applyAliases(schema, schema2));
+  	}
 
   
-  @Test
-  public void testApplyAliasesUnion() {
+  	@Test
+  	public void testApplyAliasesUnion() {
 	  
-	  schema2 = Schema.createUnion(Schema.create(Type.LONG));
+  		schema2 = Schema.createUnion(Schema.create(Type.LONG));
 
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema.addAlias(defaultValue);
-	  schema.setFields(fields);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema.addAlias(defaultValue);
+  		schema.setFields(fields);
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createMap(Schema.create(Type.LONG));			//condition coverage
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createMap(Schema.create(Type.LONG));			//condition coverage
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createUnion(Schema.create(Type.LONG));
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createUnion(Schema.create(Type.LONG));
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createFixed(schemaName, docSchema, namespace, 10);
-	  schema.addAlias(defaultValue);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createFixed(schemaName, docSchema, namespace, 10);
+  		schema.addAlias(defaultValue);
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createArray(Schema.create(Type.LONG));
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createArray(Schema.create(Type.LONG));
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createEnum(schemaName, docSchema, namespace, Collections.singletonList("value"));
-	  schema.addAlias(defaultValue);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
-  }
+  		schema = Schema.createEnum(schemaName, docSchema, namespace, Collections.singletonList("value"));
+  		schema.addAlias(defaultValue);
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
+  	}
   
   
-  @Test
-  public void testApplyAliasesArray() {
+  	@Test
+  	public void testApplyAliasesArray() {
 	  
-	  schema2 = Schema.createArray(Schema.create(Type.LONG));
+  		schema2 = Schema.createArray(Schema.create(Type.LONG));
 
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema.addAlias(defaultValue);
-	  schema.setFields(fields);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema.addAlias(defaultValue);
+  		schema.setFields(fields);
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createMap(Schema.create(Type.LONG));			//condition coverage
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createMap(Schema.create(Type.LONG));			//condition coverage
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createUnion(Schema.create(Type.LONG));
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createUnion(Schema.create(Type.LONG));
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createFixed(schemaName, docSchema, namespace, 10);
-	  schema.addAlias(defaultValue);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createFixed(schemaName, docSchema, namespace, 10);
+  		schema.addAlias(defaultValue);
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createArray(Schema.create(Type.LONG));
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
+  		schema = Schema.createArray(Schema.create(Type.LONG));
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
 	  
-	  schema = Schema.createEnum(schemaName, docSchema, namespace, Collections.singletonList("value"));
-	  schema.addAlias(defaultValue);
-	  assertEquals(schema, Schema.applyAliases(schema, schema2));
-  }
+  		schema = Schema.createEnum(schemaName, docSchema, namespace, Collections.singletonList("value"));
+  		schema.addAlias(defaultValue);
+  		assertEquals(schema, Schema.applyAliases(schema, schema2));
+  	}
 
   
   	//test Parser
-
   	@Test
   	public void testStringParse() {
 	  
@@ -744,157 +825,5 @@ public class TestSchema {
 	  
   		Schema.Parser parser = new Schema.Parser();
   		assertEquals(formatToParse + "", parser.parse(formatToParse, "").toString());
-  	}
-  	
-  	
-  	//test DefaultValue
-  	public void testIntDefaultValue() {
-	  
-  		field = new Schema.Field(fieldName, Schema.create(Schema.Type.INT), docSchema, 1);
-  		assertTrue(field.hasDefaultValue());
-    	assertEquals(1, field.defaultVal());
-    	assertEquals(1, GenericData.get().getDefaultValue(field));
-
-    	field = new Schema.Field(fieldName, Schema.create(Schema.Type.INT), docSchema, Integer.MIN_VALUE);
-    	assertTrue(field.hasDefaultValue());
-    	assertEquals(Integer.MIN_VALUE, field.defaultVal());
-    	assertEquals(Integer.MIN_VALUE, GenericData.get().getDefaultValue(field));
-
-    	field = new Schema.Field(fieldName, Schema.create(Schema.Type.INT), docSchema, Integer.MAX_VALUE);
-    	assertTrue(field.hasDefaultValue());
-    	assertEquals(Integer.MAX_VALUE, field.defaultVal());
-    	assertEquals(Integer.MAX_VALUE, GenericData.get().getDefaultValue(field));
-  	}	
-
-  @Test
-  public void testValidLongAsIntDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.INT), docSchema, 1L);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1, field.defaultVal());
-    assertEquals(1, GenericData.get().getDefaultValue(field));
-
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.INT), docSchema, Long.valueOf(Integer.MIN_VALUE));
-    assertTrue(field.hasDefaultValue());
-    assertEquals(Integer.MIN_VALUE, field.defaultVal());
-    assertEquals(Integer.MIN_VALUE, GenericData.get().getDefaultValue(field));
-
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.INT), docSchema, Long.valueOf(Integer.MAX_VALUE));
-    assertTrue(field.hasDefaultValue());
-    assertEquals(Integer.MAX_VALUE, field.defaultVal());
-    assertEquals(Integer.MAX_VALUE, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testLongDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.LONG), docSchema, 1L);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1L, field.defaultVal());
-    assertEquals(1L, GenericData.get().getDefaultValue(field));
-
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.LONG), docSchema, Long.MIN_VALUE);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(Long.MIN_VALUE, field.defaultVal());
-    assertEquals(Long.MIN_VALUE, GenericData.get().getDefaultValue(field));
-
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.LONG), docSchema, Long.MAX_VALUE);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(Long.MAX_VALUE, field.defaultVal());
-    assertEquals(Long.MAX_VALUE, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testIntAsLongDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.LONG), docSchema, 1);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1L, field.defaultVal());
-    assertEquals(1L, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testDoubleDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.DOUBLE), docSchema, 1.0);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1.0d, field.defaultVal());
-    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testIntAsDoubleDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.DOUBLE), docSchema, 1);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1.0d, field.defaultVal());
-    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testLongAsDoubleDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.DOUBLE), docSchema, 1L);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1.0d, field.defaultVal());
-    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testFloatAsDoubleDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.DOUBLE), docSchema, 1.0f);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1.0d, field.defaultVal());
-    assertEquals(1.0d, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testFloatDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.FLOAT), docSchema, 1.0f);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1.0f, field.defaultVal());
-    assertEquals(1.0f, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testIntAsFloatDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.FLOAT), docSchema, 1);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1.0f, field.defaultVal());
-    assertEquals(1.0f, GenericData.get().getDefaultValue(field));
-  }
-
-  @Test
-  public void testLongAsFloatDefaultValue() {
-	  
-    field = new Schema.Field(fieldName, Schema.create(Schema.Type.FLOAT), docSchema, 1L);
-    assertTrue(field.hasDefaultValue());
-    assertEquals(1.0f, field.defaultVal());
-    assertEquals(1.0f, GenericData.get().getDefaultValue(field));
-  }
-  
-  	@Test
-	public void testNullDefaultValue() {
-	  
-	  field = new Schema.Field(fieldName, Schema.create(Schema.Type.NULL), docSchema);
-	  assertFalse(field.hasDefaultValue());
-	}
-
-  	@Test
-  	public void testDoubleAsFloatDefaultValue() {
-	  
-  		field = new Schema.Field(fieldName, Schema.create(Schema.Type.FLOAT), docSchema, 1.0d);
-  		assertTrue(field.hasDefaultValue());
-  		assertEquals(1.0f, field.defaultVal());
-  		assertEquals(1.0f, GenericData.get().getDefaultValue(field));
-  	}
-
-  	@Test(expected = AvroRuntimeException.class)
-  	public void testCreateException() {
-	  
-  		field = new Schema.Field(fieldName, Schema.create(Schema.Type.ARRAY), docSchema, 1.0d);
   	}
 }
