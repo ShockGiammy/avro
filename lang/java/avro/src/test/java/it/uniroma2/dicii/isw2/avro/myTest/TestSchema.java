@@ -218,11 +218,6 @@ public class TestSchema {
   		field = new Field(null, Schema.create(Type.NULL), null, null);
   	}
 	
-	
-	
-	
-	
-	
 	//test equals
 	@Test
 	public void equalsFieldsAndPrettyToString() {
