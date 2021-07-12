@@ -119,6 +119,7 @@
           </excludedClasses>
           <targetTests>
             <param>it.uniroma2.dicii.isw2.avro.myTest.TestProtocol</param>
+            <param>it.uniroma2.dicii.isw2.avro.myTest.TestProtocolParse</param>
             <param>it.uniroma2.dicii.isw2.avro.myTest.TestEqualsProtocol</param>
             <param>it.uniroma2.dicii.isw2.avro.myTest.TestSchema</param>
             <param>it.uniroma2.dicii.isw2.avro.myTest.TestSchemaCreate</param>

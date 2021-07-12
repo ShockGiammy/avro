@@ -171,6 +171,7 @@ public class TestSchema {
   		schema.getField(fieldName);
   	}
 	
+	
 	//test set fields
 	@Test(expected=AvroRuntimeException.class)
 	public void testDefaultRecordWithDuplicateFieldName() {
@@ -218,6 +219,7 @@ public class TestSchema {
   		field = new Field(null, Schema.create(Type.NULL), null, null);
   	}
 	
+  	
 	//test equals
 	@Test
 	public void equalsFieldsAndPrettyToString() {
