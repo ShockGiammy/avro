@@ -1,4 +1,4 @@
-package myTest;
+package it.uniroma2.dicii.isw2.avro.myTest;
 
 import static org.junit.Assert.*;
 
@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,9 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaParseException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 public class TestProtocol {
 	
@@ -37,8 +41,6 @@ public class TestProtocol {
 	Schema schema2;
 	String schemaName;
 	String docSchema;
-	Message msg;
-	Message msg2;
 	Collection<Schema> colSchema;
 	String jsonFormat;					//white box because no other ways
 	String jsonFormatNoTypes;
@@ -98,22 +100,7 @@ public class TestProtocol {
 		propMap.put(propName, propValue);
 		file = null;
 	}
-	
-	
-	/*@Test
-	public void testCopyProtocol() throws IOException {
-		
-		p2 = new Protocol(p1);
-		assertTrue(p1.equals(p2));
-		
-		p1.addProp(propName, propValue);
-		p2 = new Protocol(pName, namespace);
-		assertFalse(p1.equals(p2));
-		
-		p2 = new Protocol(p1);
-		assertTrue(p1.equals(p2));
-	}*/
-	
+
 	@Test
 	public void testEquals() throws IOException {
 		
@@ -308,99 +295,5 @@ public class TestProtocol {
 	public void testSchemaParseException8() {
 		Protocol.parse(jsonFormat + wrongMsgOneWayResponse);
 		fail("One way response must be null");
-	}
-	
-	//test One-Way Message	
-	@Test
-	public void testOneWayMessage() {
-		
-		assertEquals("{}", p1.getMessages().toString());
-		
-		msg = p1.createMessage(msgName, doc, schema);
-		assertEquals(schema, msg.getRequest());
-		assertEquals(doc, msg.getDoc());
-		assertEquals(msgName, msg.getName());
-		assertEquals("[]",msg.getErrors().toString());
-		assertEquals("\"null\"", msg.getResponse().toString());
-		assertNull(msg.getObjectProp(namespace));
-		assertTrue(msg.isOneWay());
-	}
-	
-	@Test
-	public void testCreateAndEqualsOneWayMessage() {
-
-		msg = p1.createMessage(msgName, doc, schema);
-		assertTrue(msg.equals(msg));
-		
-		msg2 = p1.createMessage(msg, schema);
-		assertEquals(pName, msg2.getName());
-		assertFalse(msg.equals(msg2));
-		
-		assertFalse(msg.equals(msgName));				// to reach branch coverage
-		
-		msg2 = p1.createMessage(msgName, doc, schema);
-		assertTrue(msg2.isOneWay());
-		assertTrue(msg.equals(msg2));
-
-		
-		msg2 = p1.createMessage("otherName", doc, schema);
-		assertTrue(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
-		
-		msg2 = p1.createMessage(msgName, doc, schema2);
-		assertTrue(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
-
-		msg2 = p1.createMessage(pName, doc, prop, schema);
-		assertTrue(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
-		
-		msg2 = p1.createMessage(pName, doc, propMap, schema);
-		assertTrue(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
-	}
-	
-	
-	//test Two-Way Message
-	@Test
-	public void testTwoWayMessage() {
-		
-		msg = p1.createMessage(msgName, doc, schema, schema, schema);
-		assertFalse(msg.isOneWay());
-		assertNotNull(msg.getErrors());
-		assertNotNull(msg.getResponse());
-		assertEquals(schema, msg.getRequest());
-		assertEquals(doc, msg.getDoc());
-		assertEquals(msgName, msg.getName());
-		assertEquals(schema, msg.getErrors());
-		assertEquals(schema, msg.getResponse());
-	}
-	
-	@Test
-	public void testCreateAndEqualsTwoWayMessage() {
-		
-		msg = p1.createMessage(msgName, doc, schema, schema, schema);
-		assertTrue(msg.equals(msg));
-		assertFalse(msg.equals(msgName));	// to reach branch coverage
-		
-		msg2 = p1.createMessage(msg, schema, schema, schema);
-		assertFalse(msg2.isOneWay());
-		assertTrue(msg.equals(msg2));		// to reach branch coverage
-		
-		msg2 = p1.createMessage(msgName, doc, prop, schema, schema2, schema);
-		assertFalse(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
-		
-		msg2 = p1.createMessage(msgName, doc, propMap, schema, schema, schema2);
-		assertFalse(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
-		
-		msg2 = p1.createMessage(msgName, doc, prop, schema, schema, schema2);
-		assertFalse(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
-		
-		msg2 = p1.createMessage(msgName, doc, schema);
-		assertTrue(msg2.isOneWay());
-		assertFalse(msg.equals(msg2));
 	}
 }

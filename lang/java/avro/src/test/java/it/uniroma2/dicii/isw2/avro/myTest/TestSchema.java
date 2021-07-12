@@ -1,4 +1,4 @@
-package myTest;
+package it.uniroma2.dicii.isw2.avro.myTest;
 
 import static org.junit.Assert.*;
 
@@ -26,6 +26,8 @@ import org.apache.avro.Schema.Field.Order;
 import org.apache.avro.SchemaParseException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 public class TestSchema {
 	
@@ -79,83 +81,9 @@ public class TestSchema {
 		parser = new Schema.Parser();
 	}
 	
-	
-	//test Create(Type type)
-	@Test
-	public void testCreate() {
-		schema = Schema.create(Type.INT);
-		assertEquals(Type.INT, schema.getType());
-		schema = Schema.create(Type.NULL);
-		assertEquals(Type.NULL, schema.getType());
-		schema = Schema.create(Type.STRING);
-		assertEquals(Type.STRING, schema.getType());
-		schema = Schema.create(Type.BYTES);
-		assertEquals(Type.BYTES, schema.getType());
-		schema = Schema.create(Type.LONG);
-		assertEquals(Type.LONG, schema.getType());
-		schema = Schema.create(Type.FLOAT);
-		assertEquals(Type.FLOAT, schema.getType());
-		schema = Schema.create(Type.DOUBLE);
-		assertEquals(Type.DOUBLE, schema.getType());
-		schema = Schema.create(Type.BOOLEAN);
-		assertEquals(Type.BOOLEAN, schema.getType());
-	}
-	
 	@Test(expected=AvroRuntimeException.class)
 	public void testCreateException() {
 		schema = Schema.create(Type.RECORD);
-	}
-	
-	
-	//Test schema record
-	@Test
-	public void testRecordWithNullDoc() {
-	  
-		schema = Schema.createRecord(schemaName, null, namespace, false);
-		assertNotNull(schema.toString());
-		assertEquals(schemaName, schema.getName());
-		assertEquals(null, schema.getDoc());
-		assertEquals(namespace, schema.getNamespace());
-	}
-
-	@Test
-	public void testRecordWithNullNamespace() {
-	  
-		schema = Schema.createRecord(schemaName, docSchema, null, false);
-		assertNotNull(schema.toString());
-		assertEquals(schemaName, schema.getName());
-		assertEquals(docSchema, schema.getDoc());
-		assertEquals(null, schema.getNamespace());
-	}
-	
-	@Test
-  	public void testSchemaWithNullName() {
-    
-  		schema = Schema.createRecord(null, docSchema, namespace, false);
-		assertNotNull(schema.toString());
-		assertEquals(null, schema.getName());
-		assertEquals(docSchema, schema.getDoc());
-		assertEquals(null, schema.getNamespace());
-  	}
-	
-	@Test
-	public void testRecordWithEmptyDoc() {
-	  
-		schema = Schema.createRecord(schemaName, "", namespace, false);
-		assertNotNull(schema.toString());
-		assertEquals(schemaName, schema.getName());
-		assertEquals("", schema.getDoc());
-		assertEquals(namespace, schema.getNamespace());
-	}
-
-	@Test
-	public void testRecordWithEmptyNamespace() {
-	  
-		schema = Schema.createRecord(schemaName, docSchema, "", false);
-		assertNotNull(schema.toString());
-		assertEquals(schemaName, schema.getName());
-		assertEquals(docSchema, schema.getDoc());
-		assertEquals(null, schema.getNamespace());
 	}
 	
 	@Test(expected = SchemaParseException.class)		//RECORD EMPTY NAME NON PARSABILI
@@ -212,23 +140,8 @@ public class TestSchema {
 		schema = Schema.createRecord(null);
 		//manca controllo su fields = null;
 	}
-  
-	@Test
-	public void testRecordIsErrorTrue() {
-		
-		schema = Schema.createRecord(schemaName, docSchema, namespace, true);
-		assertNotNull(schema.toString());
-		assertTrue(schema.isError());
-	}
 	
-	@Test
-	public void testRecordIsErrorFalse() {
-		
-		schema = Schema.createRecord(schemaName, docSchema, namespace, false);
-		assertNotNull(schema.toString());
-		assertFalse(schema.isError());
-	}
-  
+	//test validate name
 	
 	@Test
   	public void testValidateName1() {
@@ -252,12 +165,6 @@ public class TestSchema {
   		schema = Schema.createRecord("1" + schemaName, docSchema, namespace, false);
   	}
   	
-	
-	@Test
-  	public void testIsNullableOnRecord() {
-  		assertFalse(schema.isNullable());
-  	}
-	
 	
 	@Test(expected = AvroRuntimeException.class)
   	public void testNotFieldSetted() {  

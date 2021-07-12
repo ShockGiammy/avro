@@ -118,8 +118,11 @@
           	<param>org.apache.avro.SchemaValidatorBuilder*</param>
           </excludedClasses>
           <targetTests>
-            <param>myTest.TestProtocol</param>
-            <param>myTest.TestSchema</param>
+            <param>it.uniroma2.dicii.isw2.avro.myTest.TestProtocol</param>
+            <param>it.uniroma2.dicii.isw2.avro.myTest.TestEqualsProtocol</param>
+            <param>it.uniroma2.dicii.isw2.avro.myTest.TestSchema</param>
+            <param>it.uniroma2.dicii.isw2.avro.myTest.TestSchemaCreate</param>
+            <param>it.uniroma2.dicii.isw2.avro.myTest.TestSchemaRecord</param>
           </targetTests>
     	</configuration>
  	  </plugin>
